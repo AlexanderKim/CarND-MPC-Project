@@ -104,7 +104,6 @@ int main(int argC, char** argV) {
             double delta = j[1]["steering_angle"];
             double a = j[1]["throttle"];
 
-            //Incorporate latency into the model. time_lapse is 100ms or 0.1sec.
             double latency = 0.1;
 
             double px_next = px + (v * cos(psi) * latency);
@@ -115,20 +114,20 @@ int main(int argC, char** argV) {
             double xdiff = 0;
             double ydiff = 0;
 
-            Eigen::VectorXd ptsx_vehicle(ptsx.size());
-            ptsx_vehicle.fill(0.0);
+            Eigen::VectorXd ptsx_(ptsx.size());
+            ptsx_.fill(0.0);
 
-            Eigen::VectorXd ptsy_vehicle(ptsy.size());
-            ptsy_vehicle.fill(0.0);
+            Eigen::VectorXd ptsy_(ptsy.size());
+            ptsy_.fill(0.0);
 
             for (unsigned int i = 0; i < ptsx.size(); i++) {
               xdiff = ptsx[i] - px_next;
               ydiff = ptsy[i] - py_next;
 
-              ptsx_vehicle[i] = xdiff * cos(-psi_next) - ydiff * sin(-psi_next);
-              ptsy_vehicle[i] = xdiff * sin(-psi_next) + ydiff * cos(-psi_next);
+              ptsx_[i] = xdiff * cos(-psi_next) - ydiff * sin(-psi_next);
+              ptsy_[i] = xdiff * sin(-psi_next) + ydiff * cos(-psi_next);
             }
-            auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
+            auto coeffs = polyfit(ptsx_, ptsy_, 3);
 
             double cte = polyeval(coeffs, 0);
             double epsi = -atan(coeffs[1]);
@@ -162,8 +161,6 @@ int main(int argC, char** argV) {
               }
             }
 
-
-
             //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
             // the points in the simulator are connected by a Green line
 
@@ -175,9 +172,9 @@ int main(int argC, char** argV) {
             vector<double> next_x_vals;
             vector<double> next_y_vals;
 
-            for (int i = 0; i < ptsx_vehicle.size(); i++) {
-              next_x_vals.push_back(ptsx_vehicle[i]);
-              next_y_vals.push_back(ptsy_vehicle[i]);
+            for (int i = 0; i < ptsx_.size(); i++) {
+              next_x_vals.push_back(ptsx_[i]);
+              next_y_vals.push_back(ptsy_[i]);
             }
 
             //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
