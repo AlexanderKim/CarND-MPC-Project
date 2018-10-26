@@ -102,46 +102,25 @@ int main(int argC, char** argV) {
             double psi = j[1]["psi"];
             double v = j[1]["speed"];
             double delta = j[1]["steering_angle"];
-            double acceleration = j[1]["throttle"];
+            double a = j[1]["throttle"];
 
             //Incorporate latency into the model. time_lapse is 100ms or 0.1sec.
-            double time_lapse = 0.1;
-            std::vector<double> current_mea = {px, py, psi, v};
-            std::vector<double> current_actuator_from_sim = {acceleration, delta};
+            double latency = 0.1;
 
-            //Predict state for situation after latency
-//            std::vector<double> next_pred = mpc.PredictNextState(current_mea, current_actuator_from_sim, time_lapse);
+            double px_next = px + (v * cos(psi) * latency);
+            double py_next = py + (v * sin(psi) * latency);
+            double psi_next = psi - ((v * delta * latency)/Lf);
+            double v_next = v + (a * latency);
 
-//            double px = state[0];
-//            double py = state[1];
-//            double psi = state[2];
-//            double v = state[3];
-//            double acceleration = actuations[0];
-//            double delta = actuations[1];
-
-            //Kinematic equations to predict the next state. Here, one assumption is used:
-            //The accelaration for vehicle at current time step is not received from simulator. Hence,
-            //using the throttle value returned by simulator.
-            double px_next = px + (v * cos(psi) * time_lapse);
-            double py_next = py + (v * sin(psi) * time_lapse);
-            double psi_next = psi - ((v * delta * time_lapse)/Lf);
-            double v_next = v + (acceleration * time_lapse);
-
-            //1. - Shift the coordinates of ptsx and ptsy to origin of car
-            //2. - Rotate the coordinates of ptsx and ptsy to bring them w.r.t. psi of car
-            //3. - Polyfit accepts Eigen vector and ptsx and ptsy are std::vectors. Make this
-            //          conversion
-            //4. Convert global coordinates to vehicle coordinates so that formula of cte and epsi is easy and involves less calculation
-//            double px_next = next_pred[0];
-//            double py_next = next_pred[1];
-//            double psi_next = next_pred[2];
-//            double v_next = next_pred[3];
             double xdiff = 0;
             double ydiff = 0;
+
             Eigen::VectorXd ptsx_vehicle(ptsx.size());
             ptsx_vehicle.fill(0.0);
+
             Eigen::VectorXd ptsy_vehicle(ptsy.size());
             ptsy_vehicle.fill(0.0);
+
             for (unsigned int i = 0; i < ptsx.size(); i++) {
               xdiff = ptsx[i] - px_next;
               ydiff = ptsy[i] - py_next;
@@ -151,27 +130,19 @@ int main(int argC, char** argV) {
             }
             auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
 
-            //Calculate cte and epsi. cte is the horizontal line
             double cte = polyeval(coeffs, 0);
             double epsi = -atan(coeffs[1]);
 
-            //Create the state vector
             Eigen::VectorXd state(6);
             state << 0, 0, 0, v_next, cte, epsi;
 
-            //Placeholder for solution returned by optimizer
             std::vector<double> solution;
             double steer_value;
             double throttle_value;
 
-            //Call the solver and set the steering angle to delta and throttle to a for current
-            //time step solved by MPC
             if (start_controller) {
               solution = mpc.Solve(state, coeffs);
-              //Multiplying steering angle by -1 as the implementation of positive, negative
-              //angles and right, left turn in simulator is reversed in comparison to co-ordinate
-              //system in vehicle's plane
-              steer_value = -1.0 * solution[0]/deg2rad(25);
+              steer_value = solution[0]/deg2rad(25);
               throttle_value = solution[1];
             }
 
@@ -180,8 +151,6 @@ int main(int argC, char** argV) {
             msgJson["steering_angle"] = steer_value;
             msgJson["throttle"] = throttle_value;
 
-            //Use polyfit to plot green line using vars solved by MPC
-            //Display the MPC predicted trajectory
             vector<double> mpc_x_vals;
             vector<double> mpc_y_vals;
 
@@ -219,7 +188,7 @@ int main(int argC, char** argV) {
 
 
             auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-            //std::cout << msg << std::endl;
+            std::cout << msg << std::endl;
             // Latency
             // The purpose is to mimic real driving conditions where
             // the car does actuate the commands instantly.
