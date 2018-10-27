@@ -167,8 +167,6 @@ int main(int argC, char** argV) {
             msgJson["mpc_x"] = mpc_x_vals;
             msgJson["mpc_y"] = mpc_y_vals;
 
-            //Use polyfit to plot yellow line using way points
-            //Display the waypoints/reference line
             vector<double> next_x_vals;
             vector<double> next_y_vals;
 
