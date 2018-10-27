@@ -104,12 +104,12 @@ int main(int argC, char** argV) {
             double delta = j[1]["steering_angle"];
             double a = j[1]["throttle"];
 
-            double latency = 0.1;
+            double dt = 0.1;
 
-            double px_next = px + (v * cos(psi) * latency);
-            double py_next = py + (v * sin(psi) * latency);
-            double psi_next = psi - ((v * delta * latency)/Lf);
-            double v_next = v + (a * latency);
+            double px_next = px + (v * cos(psi) * dt);
+            double py_next = py + (v * sin(psi) * dt);
+            double psi_next = psi - ((v * delta * dt)/Lf);
+            double v_next = v + (a * dt);
 
             double xdiff = 0;
             double ydiff = 0;

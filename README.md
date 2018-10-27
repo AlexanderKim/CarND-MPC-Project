@@ -27,7 +27,7 @@ I've been closely following and relying on the solution provided in class materi
 ```
 See the manual tuning approach below 
 
-### Constraints
+#### Constraints
 Model is constrainted in regards of:
 - Steering angles to be between -25 and 25 degrees
 - Throttle to be between -1.0 and 1.0
@@ -47,6 +47,76 @@ Model is constrainted in regards of:
   }
 ```
 
+#### Vehicle model
+
+The model is described mathematically as on the picture above with the following parameters:
+- x, y — coordinates of the vehicle
+- psi — angle of the vehicle's direction
+- v — velocity
+- cte — cross-track error is the distance between the vehicle and trajectory
+- psi — direction error
+
+Defined in the code as follows:
+
+```cpp
+  fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+  fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
+  fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
+  fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
+  fg[1 + cte_start + t] =
+      cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+  fg[1 + epsi_start + t] =
+      epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
+```
+
+#### Cost function
+
+As described in classes:
+
+```cpp
+  // The part of the cost based on the reference state.
+  for( int t = 0; t < N; t++ ) {
+    fg[0] += 500*CppAD::pow(vars[cte_start + t], 2);
+    fg[0] += 500*CppAD::pow(vars[epsi_start + t], 2);
+    fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+  }
+
+  // Minimize the use of actuators.
+  for (int t = 0; t < N - 1; t++) {
+    fg[0] += 100*CppAD::pow(vars[delta_start + t], 2);
+    fg[0] += 100*CppAD::pow(vars[a_start + t], 2);
+  }
+
+  // Minimize the value gap between sequential actuations.
+  for (int t = 0; t < N - 2; t++) {
+    fg[0] += 200000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+    fg[0] += 200000*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+  }
+```
+
+### Timestep Length and Elapsed Duration (N & dt)
+
+These parameters were set up experimentally by trial and error.\
+Overall I've figured out that the shorter the Prediction horizon, the more stable the vehicle; the higher N the faster the movement.\
+ Keeping that in mind I came up with:
+ - N = 15
+ - t = 0.05
+ 
+ On larger N-s and t-s I've observed a very unstable trajectories and velocities leading car out of track.
+ Though on smaller ones I've seen it to be more stable but slow.
+ 
+### Polynomial Fitting and MPC Preprocessing
+
+Waypoints transformation and third degree polynomial fit are performed at ./main.cpp lines 123-130
+
+
+### Model Predictive Control with Latency
+
+./main.cpp lines 107-112
+
+
+###
+[Video of a full lap](full_lap480.mov)
 
 ## Dependencies
 
