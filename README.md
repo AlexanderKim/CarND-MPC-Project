@@ -3,6 +3,51 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
+## Rubric: Project specification points
+
+### Your code should compile
+
+Compilation is successful, though I had to solve a number of problems to set up and use Ipopt on my Mac due to the fact that brew formula is obsolete. I've been trying to install and use it from other brew `taps`, though the model was not runnung. Finally I've used a Docker image based on Ubuntu. Then on I've been copiling and running the model in there.
+
+### The Model
+
+I've been closely following and relying on the solution provided in class materials, and modified it as described in further items:
+ ![Model](model_screenshot.png)
+ 
+ #### Preidction horizon parameters initialization
+ `The prediction horizon is the duration over which future predictions are made`\
+ It is represented in our model by the following parameters:
+ - N — numbers of timestamps in the horizon
+ - dt — uniform duration between each of N actuations in the Prediction horizon
+ 
+ I've experimentally found them to be of these optimal values:
+```
+ size_t N = 15;
+ double dt = 0.05;
+```
+See the manual tuning approach below 
+
+### Constraints
+Model is constrainted in regards of:
+- Steering angles to be between -25 and 25 degrees
+- Throttle to be between -1.0 and 1.0
+
+
+```cpp
+// Steering limits of -25 to 25 degrees set in radians
+  for ( int i = delta_start; i < a_start; i++ ) {
+    vars_lowerbound[i] = -0.436332;
+    vars_upperbound[i] = 0.43632;
+  }
+
+  // Acceleration limits
+  for ( int i = a_start; i < n_vars; i++ ) {
+    vars_lowerbound[i] = -1.0;
+    vars_upperbound[i] = 1.0;
+  }
+```
+
+
 ## Dependencies
 
 * cmake >= 3.5
